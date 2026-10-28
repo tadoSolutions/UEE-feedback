@@ -21,7 +21,8 @@ Live at https://tadosolutions.github.io/UEE-feedback/
 - Done: Apps Script project "Learner Feedback backend" bound to it; `setup()` run and the admin key generated (Project Settings › Script properties › ADMIN_KEY).
 - Done: deployed as web app "Learner feedback v1.0"; URL set as `endpoint` in `config.js`.
 - Done: live test passed (status check, wrong admin key rejected, test response stored with hash check OK). The test row is marked `Excluded`.
-- Next: publish this repository to GitHub Pages (Settings › Pages › Deploy from branch › main, root), then a phone test of each link.
+- Done: published from `tadoSolutions/UEE-feedback` to GitHub Pages; both unit links, the report page and the backend connection checked live. The old copy on `tadosolutions.github.io/feedback/` has been removed.
+- Next: a test submission from your phone on each link, then mark those rows `Excluded`.
 
 ## Plan to implement
 
