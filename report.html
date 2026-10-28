@@ -1,0 +1,510 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Feedback Report</title>
+<style>
+:root {
+  --bg: #f3f5f4; --card: #fff; --ink: #17201f; --muted: #5d6967; --line: #dde3e1;
+  --accent: #0f5257; --accent-ink: #fff; --accent-soft: #e3efee; --warn: #9a3412; --warn-soft: #fff1e8; --ok: #166534;
+  --focus: 0 0 0 3px rgba(15, 82, 87, .35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1514; --card: #172120; --ink: #e8efed; --muted: #9aa8a5; --line: #2a3735;
+    --accent: #5fb3ac; --accent-ink: #0b1514; --accent-soft: #1d3331; --warn: #fdba74; --warn-soft: #3a2415; --ok: #86efac;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif; }
+.wrap { max-width: 880px; margin: 0 auto; padding: 20px 16px 60px; }
+h1 { font-size: 24px; margin: 0 0 4px; }
+h2 { font-size: 14px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 24px 2px 8px; }
+.lead { color: var(--muted); margin: 0; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; margin: 10px 0; }
+.grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); }
+label.f { display: block; font-size: 13px; color: var(--muted); margin-bottom: 4px; font-weight: 600; }
+input[type=text], input[type=password], input[type=date], input[type=number], textarea {
+  width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 10px; }
+textarea { min-height: 110px; resize: vertical; }
+input:focus, textarea:focus { outline: none; box-shadow: var(--focus); border-color: var(--accent); }
+.btn { appearance: none; border: 0; border-radius: 10px; background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 700; padding: 11px 18px; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.btn[disabled] { opacity: .5; cursor: default; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tabs { display: inline-flex; flex-wrap: wrap; max-width: 100%; gap: 4px; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 4px; }
+.tabs button { border: 0; background: transparent; font: inherit; font-weight: 600; padding: 8px 14px; border-radius: 9px; color: var(--ink); cursor: pointer; }
+.tabs button[aria-pressed=true] { background: var(--card); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.check { display: flex; gap: 8px; align-items: center; cursor: pointer; }
+.check input { width: 18px; height: 18px; accent-color: var(--accent); }
+.kpis { display: grid; gap: 10px; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); }
+.kpi { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; }
+.kpi b { display: block; font-size: 24px; }
+.kpi span { color: var(--muted); font-size: 13px; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tbl th, .tbl td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+.tbl th { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .03em; }
+.tbl td.n { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+.scroll { overflow-x: auto; }
+.bar { height: 8px; background: var(--line); border-radius: 9px; min-width: 70px; overflow: hidden; margin-top: 6px; }
+.bar i { display: block; height: 100%; background: var(--accent); }
+.badge { display: inline-block; font-size: 12px; font-weight: 700; padding: 1px 7px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); }
+.badge.bad { background: var(--warn-soft); color: var(--warn); }
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+.notice { background: var(--accent-soft); border-radius: 12px; padding: 12px 14px; font-size: 14px; margin: 10px 0; }
+.notice.warn { background: var(--warn-soft); color: var(--warn); }
+.hint { color: var(--muted); font-size: 13px; }
+.sigbox { position: relative; border: 1px dashed var(--muted); border-radius: 10px; background: #fff; height: 120px; max-width: 420px; touch-action: none; }
+.sigbox canvas { width: 100%; height: 100%; display: block; cursor: crosshair; border-radius: 10px; touch-action: none; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Learner feedback report</h1>
+  <p class="lead" id="sub"></p>
+  <div id="demoBanner" class="notice warn" hidden>Demo mode: reading responses saved in this browser. Set <span class="mono">endpoint</span> in config.js to read the Google Sheet.</div>
+
+  <div class="card" id="connect">
+    <div class="grid" style="align-items:end">
+      <div id="keyWrap"><label class="f" for="key">Admin key</label><input type="password" id="key" autocomplete="off" placeholder="From Apps Script setup()"></div>
+      <div><label class="check"><input type="checkbox" id="remember"> Remember on this device</label></div>
+      <div class="btns"><button class="btn" id="load">Load responses</button></div>
+    </div>
+    <p class="hint" id="loadMsg" role="status" style="margin:10px 0 0"></p>
+  </div>
+
+  <div id="main" hidden>
+    <div class="btns" style="justify-content:space-between;margin-top:14px">
+      <div class="tabs" id="tabs"></div>
+      <div class="btns">
+        <label class="f" for="from" style="margin:0">From</label><input type="date" id="from" style="width:auto">
+        <label class="f" for="to" style="margin:0">To</label><input type="date" id="to" style="width:auto">
+      </div>
+    </div>
+
+    <h2>Summary</h2>
+    <div class="kpis" id="kpis"></div>
+    <div class="card scroll"><table class="tbl" id="sumTbl"></table></div>
+
+    <h2>Responses</h2>
+    <p class="hint" style="margin:0 2px">Untick a response to leave it out of the report (for example, a test entry). The PDF states how many were left out.</p>
+    <div class="card scroll"><table class="tbl" id="respTbl"></table></div>
+
+    <h2>Your analysis and actions</h2>
+    <div class="card">
+      <p class="hint" style="margin-top:0" id="reviewMap"></p>
+      <label class="f" for="analysis">What the feedback tells you</label>
+      <textarea id="analysis" placeholder="Patterns in the ratings and comments, what went well, where learners were less satisfied, and why you think that is."></textarea>
+      <div class="btns" style="margin:6px 0 14px"><button class="btn ghost" id="draft" type="button">Insert key figures</button><span class="hint">Adds the highest and lowest items as a starting point. Write the reflection in your own words.</span></div>
+      <label class="f" for="actions">Changes you will make to your practice or the program</label>
+      <textarea id="actions" placeholder="Each change, the feedback it responds to, and when you will apply it (for example, the next delivery)."></textarea>
+      <div class="grid" style="margin-top:14px">
+        <div><label class="f" for="cohort">Learners in cohort</label><input type="number" id="cohort" min="1" max="99"></div>
+      </div>
+    </div>
+
+    <h2>Report options</h2>
+    <div class="card">
+      <div class="grid">
+        <label class="check"><input type="checkbox" id="optRedact" checked> Replace names with Candidate A, B, C</label>
+        <label class="check"><input type="checkbox" id="optSig" checked> Include learner signatures</label>
+        <label class="check"><input type="checkbox" id="optAppx" checked> Include individual responses</label>
+        <label class="check"><input type="checkbox" id="optMap" checked> Include TAE40122 mapping</label>
+      </div>
+      <p class="hint" id="sigNote">With names replaced, signatures show as "Signature held on file".</p>
+      <label class="f" style="margin-top:12px">Your signature for the declaration (optional)</label>
+      <div class="sigbox"><canvas id="tsig"></canvas></div>
+      <button class="btn ghost" id="tsigClear" type="button" style="margin-top:6px;padding:6px 12px">Clear</button>
+    </div>
+
+    <div class="btns" style="margin-top:16px">
+      <button class="btn" id="pdf">Generate PDF</button>
+      <button class="btn ghost" id="csv">Export CSV</button>
+      <button class="btn ghost" id="key2">Candidate key (CSV)</button>
+    </div>
+    <p class="hint" id="pdfMsg" role="status"></p>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script src="vendor/jspdf.umd.min.js"></script>
+<script src="vendor/jspdf.plugin.autotable.min.js"></script>
+<script>
+(function () {
+  'use strict';
+  const C = window.FEEDBACK_CONFIG, $ = id => document.getElementById(id), esc = FB.esc;
+  const DEMO = !C.endpoint;
+  // Units without a TAE label or mapping fall back to the unit code alone.
+  const pname = P => P.label ? P.label + ' (' + P.unit + ')' : P.unit;
+  const rmap = p => (C.reviewMap && C.reviewMap[p]) || '';
+  const qmap = (q, p) => (q.map && q.map[p]) || '';
+  let all = [], program = Object.keys(C.programs)[0];
+
+  $('sub').textContent = C.trainer + ' · ' + C.course + ' · ' + C.provider;
+  $('demoBanner').hidden = !DEMO; $('keyWrap').hidden = DEMO;
+  const savedKey = FB.store.get('eimfb.adminKey', '') || (sessionStorage.getItem('eimfb.adminKey') || '');
+  $('key').value = savedKey; $('remember').checked = !!FB.store.get('eimfb.adminKey', '');
+
+  $('tabs').innerHTML = Object.entries(C.programs).map(([k, p]) =>
+    `<button type="button" data-p="${k}" aria-pressed="${k === program}">${esc(pname(p))}</button>`).join('');
+  $('tabs').addEventListener('click', e => {
+    const b = e.target.closest('button[data-p]'); if (!b) return;
+    saveDrafts(); program = b.dataset.p;
+    document.querySelectorAll('#tabs button').forEach(x => x.setAttribute('aria-pressed', x.dataset.p === program));
+    loadDrafts(); render();
+  });
+
+  // ---------- Load ----------
+  $('load').addEventListener('click', load);
+  async function load() {
+    const msg = $('loadMsg'); msg.textContent = 'Loading…';
+    try {
+      let rows;
+      if (DEMO) rows = FB.store.get('eimfb.demo', []);
+      else {
+        const key = $('key').value.trim();
+        if (!key) { msg.textContent = 'Enter the admin key.'; return; }
+        try { sessionStorage.setItem('eimfb.adminKey', key); } catch (e) {}
+        if ($('remember').checked) FB.store.set('eimfb.adminKey', key); else FB.store.del('eimfb.adminKey');
+        rows = (await FB.post(C.endpoint, { action: 'list', key })).rows;
+      }
+      all = [];
+      for (const r of rows) {
+        let p; try { p = JSON.parse(r.payload); } catch (e) { continue; }
+        const local = await FB.sha256(r.payload);
+        const sigOk = !r.signature || (await FB.sha256(r.signature)) === p.signatureSha256;
+        all.push({ ...r, p, verified: local === r.hash && r.hashCheck !== 'MISMATCH' && sigOk,
+          include: (r.status || 'Active').toLowerCase() !== 'excluded' });
+      }
+      all.sort((a, b) => new Date(a.received) - new Date(b.received));
+      msg.textContent = all.length + ' response' + (all.length === 1 ? '' : 's') + ' loaded.';
+      $('main').hidden = false; loadDrafts(); render();
+    } catch (err) { msg.textContent = 'Could not load: ' + err.message; }
+  }
+
+  // ---------- Filtering and stats ----------
+  const dayOf = iso => new Date(iso).toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
+  function inProgram() {
+    const f = $('from').value, t = $('to').value;
+    return all.filter(r => r.p.program === program && (!f || dayOf(r.received) >= f) && (!t || dayOf(r.received) <= t));
+  }
+  const included = () => inProgram().filter(r => r.include);
+  function refs(list) { // stable codes in submission order
+    let n = 0, a = 0;
+    const m = new Map();
+    list.forEach(r => m.set(r.p.id, r.p.anonymous ? 'Anonymous ' + (++a) : 'Candidate ' + String.fromCharCode(65 + (n++ % 26)) + (n > 26 ? Math.ceil(n / 26) : '')));
+    return m;
+  }
+  function stats(list, id) {
+    const vals = list.map(r => r.p.answers[id]).filter(v => v !== undefined && v !== null && v !== '');
+    const nums = vals.filter(v => v !== 'na').map(Number);
+    const dist = [1, 2, 3, 4, 5].map(k => nums.filter(v => v === k).length);
+    const mean = nums.length ? nums.reduce((s, v) => s + v, 0) / nums.length : null;
+    const agree = nums.length ? (dist[3] + dist[4]) / nums.length : null;
+    return { n: nums.length, na: vals.length - nums.length, dist, mean, agree };
+  }
+  const fmt1 = v => v == null ? '-' : v.toFixed(1);
+  const pct = v => v == null ? '-' : Math.round(v * 100) + '%';
+
+  function render() {
+    const P = C.programs[program], list = included(), every = inProgram();
+    if (!$('cohort').value || $('cohort').dataset.p !== program) { $('cohort').value = P.cohort || ''; $('cohort').dataset.p = program; }
+    const cohort = Number($('cohort').value) || 0;
+    const ov = stats(list, 'overall');
+    const named = list.filter(r => !r.p.anonymous).length;
+    $('kpis').innerHTML = [
+      [list.length, 'responses' + (cohort ? ' of ' + cohort + ' (' + pct(list.length / cohort) + ')' : '')],
+      [fmt1(ov.mean) + ' / 5', 'overall rating'],
+      [named + ' · ' + (list.length - named), 'named · anonymous'],
+      [list.filter(r => !r.verified).length || 'All', list.filter(r => !r.verified).length ? 'failed integrity check' : 'passed integrity check']
+    ].map(([b, s]) => `<div class="kpi"><b>${esc(b)}</b><span>${esc(s)}</span></div>`).join('');
+
+    let h = '<tr><th>#</th><th>Statement</th><th>n</th><th>Mean</th><th>Agree</th><th>1·2·3·4·5</th><th>N/A</th></tr>';
+    C.questions.concat([C.overall]).forEach((q, i) => {
+      const s = stats(list, q.id);
+      h += `<tr><td>${q.id === 'overall' ? '★' : i + 1}</td><td>${esc(FB.questionText(q, program))}</td><td class="n">${s.n}</td><td class="n">${fmt1(s.mean)}</td>
+        <td>${q.id === 'overall' ? '' : pct(s.agree) + `<div class="bar"><i style="width:${(s.agree || 0) * 100}%"></i></div>`}</td>
+        <td class="n mono">${s.dist.join('·')}</td><td class="n">${s.na || ''}</td></tr>`;
+    });
+    $('sumTbl').innerHTML = h;
+
+    const R = refs(every.filter(r => r.include));
+    $('respTbl').innerHTML = '<tr><th>Use</th><th>Ref</th><th>Recorded as</th><th>Submitted</th><th>Overall</th><th>Integrity</th></tr>' +
+      (every.length ? every.map(r => `<tr><td><input type="checkbox" data-id="${esc(r.p.id)}" ${r.include ? 'checked' : ''} aria-label="Include"></td>
+        <td>${esc(R.get(r.p.id) || '-')}</td>
+        <td>${r.p.anonymous ? 'Anonymous · <span class="mono">' + esc(r.p.deviceId) + '</span>' : esc(r.p.name) + (r.signature ? ' (signed)' : '')}</td>
+        <td>${esc(FB.fmtDateTime(r.received))}</td><td class="n">${esc(r.p.answers.overall)}</td>
+        <td><span class="badge ${r.verified ? '' : 'bad'}">${r.verified ? 'Verified' : 'Check'}</span> <span class="mono">${esc(r.hash.slice(0, 12).toUpperCase())}</span></td></tr>`).join('')
+        : '<tr><td colspan="6" class="hint">No responses for this program yet.</td></tr>');
+    $('reviewMap').textContent = rmap(program) ? 'Evidence for: ' + rmap(program) : '';
+    $('pdf').disabled = !list.length;
+  }
+  $('respTbl').addEventListener('change', e => {
+    const id = e.target.dataset.id; if (!id) return;
+    const r = all.find(x => x.p.id === id); if (r) r.include = e.target.checked; render();
+  });
+  ['from', 'to', 'cohort'].forEach(id => $(id).addEventListener('change', render));
+  $('optRedact').addEventListener('change', () => { $('sigNote').hidden = !$('optRedact').checked; });
+
+  // ---------- Drafts ----------
+  function saveDrafts() { FB.store.set('eimfb.review.' + program, { analysis: $('analysis').value, actions: $('actions').value }); }
+  function loadDrafts() { const d = FB.store.get('eimfb.review.' + program, {}); $('analysis').value = d.analysis || ''; $('actions').value = d.actions || ''; }
+  ['analysis', 'actions'].forEach(id => $(id).addEventListener('input', saveDrafts));
+  $('draft').addEventListener('click', () => {
+    const list = included();
+    const rows = C.questions.map((q, i) => ({ i: i + 1, q, s: stats(list, q.id) })).filter(x => x.s.n);
+    if (!rows.length) return;
+    rows.sort((a, b) => b.s.mean - a.s.mean);
+    const top = rows[0], low = rows[rows.length - 1], ov = stats(list, 'overall');
+    const t = `${list.length} learner${list.length === 1 ? '' : 's'} responded. Overall rating ${fmt1(ov.mean)} out of 5. ` +
+      `Highest rated: item ${top.i} (${FB.questionText(top.q, program)}) mean ${fmt1(top.s.mean)}. ` +
+      `Lowest rated: item ${low.i} (${FB.questionText(low.q, program)}) mean ${fmt1(low.s.mean)}.\n\n`;
+    $('analysis').value = t + $('analysis').value; saveDrafts();
+  });
+
+  // ---------- Trainer signature pad ----------
+  const tc = $('tsig'), tx = tc.getContext('2d'); let tDraw = false, tLast = null, tSigned = false;
+  function tSize() { const r = tc.getBoundingClientRect(), d = window.devicePixelRatio || 1; if (!r.width) return;
+    tc.width = r.width * d; tc.height = r.height * d; tx.setTransform(d, 0, 0, d, 0, 0); tx.lineWidth = 2.2; tx.lineCap = 'round'; tx.strokeStyle = '#111'; tSigned = false; }
+  const tp = e => { const r = tc.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
+  tc.addEventListener('pointerdown', e => { if (!tc.width || tc.width < 10) tSize(); tDraw = true; tLast = tp(e); tc.setPointerCapture(e.pointerId); tSigned = true; e.preventDefault(); });
+  tc.addEventListener('pointermove', e => { if (!tDraw) return; const p = tp(e); tx.beginPath(); tx.moveTo(tLast.x, tLast.y); tx.lineTo(p.x, p.y); tx.stroke(); tLast = p; });
+  ['pointerup', 'pointercancel'].forEach(t => tc.addEventListener(t, () => tDraw = false));
+  $('tsigClear').addEventListener('click', tSize);
+  new MutationObserver(() => { if (!$('main').hidden && tc.width === 300) tSize(); }).observe($('main'), { attributes: true });
+
+  // ---------- Exports ----------
+  function download(name, text, type) {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type })); a.download = name;
+    document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+  }
+  const csvCell = v => { let s = String(v == null ? '' : v); if (/^[=+\-@]/.test(s)) s = "'" + s; return /[",\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+  const stamp = () => new Date().toLocaleDateString('en-CA', { timeZone: 'Australia/Brisbane' });
+  $('csv').addEventListener('click', () => {
+    const qids = C.questions.map(q => q.id).concat('overall');
+    const head = ['Received', 'Response ID', 'Program', 'Unit', 'Included', 'Anonymous', 'Name', 'Device ID', 'Client time']
+      .concat(qids).concat(C.comments.map(c => c.text), ['Signed', 'SHA-256', 'Verified']);
+    const lines = [head.map(csvCell).join(',')].concat(inProgram().map(r => [r.received, r.p.id, r.p.program, r.p.unit,
+      r.include ? 'Yes' : 'No', r.p.anonymous ? 'Yes' : 'No', r.p.name, r.p.deviceId, r.p.clientTime]
+      .concat(qids.map(q => r.p.answers[q])).concat(C.comments.map(c => r.p.comments[c.id]), [r.signature ? 'Yes' : 'No', r.hash, r.verified ? 'Yes' : 'No']).map(csvCell).join(',')));
+    download(`Learner Feedback ${C.programs[program].unit} data ${stamp()} - TADO, Caesar.csv`, '﻿' + lines.join('\r\n'), 'text/csv');
+  });
+  $('key2').addEventListener('click', () => {
+    const list = included(), R = refs(list);
+    const lines = [['Ref', 'Name', 'Response ID', 'Device ID', 'Submitted'].join(',')].concat(
+      list.filter(r => !r.p.anonymous).map(r => [R.get(r.p.id), r.p.name, r.p.id, r.p.deviceId, r.received].map(csvCell).join(',')));
+    download(`Candidate key ${C.programs[program].unit} - DO NOT SUBMIT.csv`, '﻿' + lines.join('\r\n'), 'text/csv');
+  });
+
+  // ---------- PDF ----------
+  // The built-in PDF fonts only cover Latin-1, so tidy typographic characters and drop the rest (emoji etc).
+  const pdfText = s => String(s == null ? '' : s)
+    .replace(/[‘’‚′]/g, "'").replace(/[“”„″]/g, '"')
+    .replace(/[–—−]/g, '-').replace(/…/g, '...').replace(/•/g, '-')
+    .replace(/[^\x09\x0A\x0D\x20-\x7E\xA0-\xFF]/g, '').replace(/\r\n/g, '\n');
+  const imgSize = src => new Promise(res => { const i = new Image(); i.onload = () => res({ w: i.naturalWidth, h: i.naturalHeight }); i.onerror = () => res(null); i.src = src; });
+
+  $('pdf').addEventListener('click', async () => {
+    const btn = $('pdf'); btn.disabled = true; $('pdfMsg').textContent = 'Building PDF…';
+    try { await buildPdf(); $('pdfMsg').textContent = 'PDF downloaded.'; }
+    catch (err) { console.error(err); $('pdfMsg').textContent = 'PDF failed: ' + err.message; }
+    finally { btn.disabled = false; }
+  });
+
+  async function buildPdf() {
+    const { jsPDF } = window.jspdf;
+    const autoTable = window.autoTable || ((d, o) => d.autoTable(o));
+    const P = C.programs[program], list = included(), every = inProgram(), R = refs(list);
+    const redact = $('optRedact').checked, showSig = $('optSig').checked && !redact;
+    const cohort = Number($('cohort').value) || 0;
+    const generated = new Date();
+    const reportId = (await FB.sha256(list.map(r => r.hash).join('|') + generated.toISOString())).slice(0, 12).toUpperCase();
+    const dates = list.map(r => new Date(r.received)).sort((a, b) => a - b);
+    const day = d => d.toLocaleDateString('en-AU', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Australia/Brisbane' });
+    const period = dates.length ? (day(dates[0]) === day(dates[dates.length - 1]) ? day(dates[0]) : day(dates[0]) + ' to ' + day(dates[dates.length - 1])) : '-';
+    const who = r => redact || r.p.anonymous ? R.get(r.p.id) : r.p.name;
+
+    const doc = new jsPDF({ unit: 'mm', format: 'a4' });
+    const M = 16, W = 210 - M * 2, ACC = [15, 82, 87], INK = [23, 32, 31], MUT = [93, 105, 103], LINE = [221, 227, 225];
+    let y = M;
+    const T = (txt, x, yy, o) => doc.text(pdfText(txt), x, yy, o);
+    const heading = (txt) => {
+      if (y > 260) { doc.addPage(); y = M + 4; }
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(...ACC); T(txt, M, y); y += 2;
+      doc.setDrawColor(...ACC); doc.setLineWidth(0.4); doc.line(M, y, M + W, y); y += 5;
+      doc.setTextColor(...INK); doc.setFont('helvetica', 'normal');
+    };
+    const para = (txt, size) => {
+      doc.setFontSize(size || 9.5); doc.setTextColor(...INK);
+      pdfText(txt).split('\n').forEach(pl => {
+        const lines = doc.splitTextToSize(pl || ' ', W);
+        lines.forEach(l => { if (y > 280) { doc.addPage(); y = M + 4; } doc.text(l, M, y); y += (size || 9.5) * 0.45; });
+      });
+      y += 2;
+    };
+    const tableBase = { margin: { left: M, right: M, top: M + 4 }, styles: { font: 'helvetica', fontSize: 8.5, cellPadding: 1.8, textColor: INK, lineColor: LINE, lineWidth: 0.2 },
+      headStyles: { fillColor: ACC, textColor: 255, fontStyle: 'bold' }, alternateRowStyles: { fillColor: [246, 248, 247] } };
+    const after = () => (doc.lastAutoTable ? doc.lastAutoTable.finalY : y) + 7;
+
+    // Title block
+    doc.setFillColor(...ACC); doc.rect(0, 0, 210, 5, 'F');
+    y = 18;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...MUT); T('LEARNER FEEDBACK REPORT', M, y); y += 7;
+    doc.setFontSize(18); doc.setTextColor(...INK); T(pname(P), M, y); y += 6;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(10.5); doc.setTextColor(...MUT);
+    doc.splitTextToSize(pdfText(P.title), W).forEach(l => { doc.text(l, M, y); y += 5; });
+    y += 2;
+    const excluded = every.length - list.length;
+    autoTable(doc, { ...tableBase, startY: y, theme: 'plain', styles: { ...tableBase.styles, fontSize: 9, cellPadding: 1.4, lineWidth: 0 },
+      columnStyles: { 0: { cellWidth: 46, textColor: MUT, fontStyle: 'bold' } },
+      body: [
+        [P.tae ? 'Trainer (TAE candidate)' : 'Trainer', C.trainer]].concat(P.tae ? [
+        ['Qualification / provider', C.course + ' - ' + C.provider]] : [], [
+        ['RTO', C.rto],
+        ['Delivery', [P.mode, P.delivered].filter(Boolean).join(', ') || '-'],
+        ['Feedback collected', period],
+        ['Responses', list.length + (cohort ? ' of ' + cohort + ' learners (' + pct(list.length / cohort) + ' response rate)' : '') +
+          ' - ' + list.filter(r => !r.p.anonymous).length + ' named, ' + list.filter(r => r.p.anonymous).length + ' anonymous' +
+          (excluded ? '; ' + excluded + ' left out (test or invalid entries)' : '')],
+        ['Integrity', list.filter(r => r.verified).length + ' of ' + list.length + ' responses match their SHA-256 receipt'],
+        ['Devices', (() => { const c = {}; list.forEach(r => c[r.p.deviceId] = (c[r.p.deviceId] || 0) + 1);
+          const shared = Object.entries(c).filter(([, n]) => n > 1);
+          return Object.keys(c).length + ' device ID' + (Object.keys(c).length === 1 ? '' : 's') +
+            (shared.length ? ' (shared device: ' + shared.map(([d, n]) => d + ' x' + n).join(', ') + ')' : ', one response each'); })()],
+        ['Report generated', FB.fmtDateTime(generated.toISOString()) + ' - Report ID ' + reportId]
+      ]).map(r => r.map(pdfText))
+    });
+    y = after();
+
+    // Ratings summary
+    heading('1. Summary of ratings');
+    const sumBody = C.questions.map((q, i) => { const s = stats(list, q.id); return [i + 1, FB.questionText(q, program), s.n, fmt1(s.mean), pct(s.agree)].concat(s.dist, [s.na || '']); });
+    const ov = stats(list, 'overall');
+    sumBody.push(['', C.overall.text + ' (stars)', ov.n, fmt1(ov.mean), ''].concat(ov.dist, ['']));
+    autoTable(doc, { ...tableBase, startY: y,
+      head: [['#', 'Statement', 'n', 'Mean', 'Agree', '1', '2', '3', '4', '5', 'N/A']],
+      body: sumBody.map(r => r.map(pdfText)),
+      columnStyles: { 0: { cellWidth: 7, halign: 'center' }, 1: { cellWidth: 'auto' }, 2: { cellWidth: 8, halign: 'center' }, 3: { cellWidth: 11, halign: 'center' },
+        4: { cellWidth: 26 }, 5: { cellWidth: 8, halign: 'center' }, 6: { cellWidth: 8, halign: 'center' }, 7: { cellWidth: 8, halign: 'center' },
+        8: { cellWidth: 8, halign: 'center' }, 9: { cellWidth: 8, halign: 'center' }, 10: { cellWidth: 9, halign: 'center' } },
+      didParseCell: d => { if (d.section === 'body' && d.row.index === sumBody.length - 1) d.cell.styles.fontStyle = 'bold'; },
+      didDrawCell: d => {
+        if (d.section !== 'body' || d.column.index !== 4 || d.row.index === sumBody.length - 1) return;
+        const s = stats(list, C.questions[d.row.index].id); if (s.agree == null) return;
+        const bx = d.cell.x + 12, bw = d.cell.width - 14, by = d.cell.y + d.cell.height / 2 - 1.2;
+        doc.setFillColor(...LINE); doc.rect(bx, by, bw, 2.4, 'F'); doc.setFillColor(...ACC); doc.rect(bx, by, bw * s.agree, 2.4, 'F');
+      },
+      willDrawCell: d => { if (d.section === 'body' && d.column.index === 4) { d.cell.styles.halign = 'left'; } }
+    });
+    y = after() - 3;
+    doc.setFontSize(8); doc.setTextColor(...MUT);
+    doc.splitTextToSize(pdfText('Scale: 1 ' + C.scale[0] + ', 2 ' + C.scale[1] + ', 3 ' + C.scale[2] + ', 4 ' + C.scale[3] + ', 5 ' + C.scale[4] +
+      '. Agree = share of rated answers that were 4 or 5 (N/A excluded). Overall uses 1 to 5 stars.'), W).forEach(l => { doc.text(l, M, y); y += 3.6; });
+    y += 5;
+
+    // Comments
+    heading('2. Learner comments');
+    const cRows = list.filter(r => C.comments.some(c => (r.p.comments[c.id] || '').trim())).map(r => [who(r)].concat(C.comments.map(c => r.p.comments[c.id] || '-')));
+    if (cRows.length) {
+      autoTable(doc, { ...tableBase, startY: y, head: [['Ref'].concat(C.comments.map(c => c.text))], body: cRows.map(r => r.map(pdfText)),
+        columnStyles: { 0: { cellWidth: 26, fontStyle: 'bold' } } });
+      y = after();
+    } else { para('No written comments were given.'); y += 3; }
+
+    // Trainer review
+    heading('3. Trainer analysis and actions');
+    doc.setFontSize(8); doc.setTextColor(...MUT); if (rmap(program)) T('Evidence for: ' + rmap(program), M, y); y += 6;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(...INK); T('Analysis of the feedback', M, y); y += 5; doc.setFont('helvetica', 'normal');
+    para($('analysis').value.trim() || '[Not yet completed]');
+    y += 2;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10); T('Changes to practice and the learning program', M, y); y += 5; doc.setFont('helvetica', 'normal');
+    para($('actions').value.trim() || '[Not yet completed]');
+    y += 3;
+    if (y > 245) { doc.addPage(); y = M + 4; }
+    doc.setFillColor(246, 248, 247); doc.setDrawColor(...LINE); doc.roundedRect(M, y, W, 34, 2, 2, 'FD');
+    doc.setFontSize(9); doc.setTextColor(...INK);
+    const decl = doc.splitTextToSize(pdfText('Declaration: I declare that this report is a true record of the feedback learners gave through the Learner Feedback form for ' +
+      pname(P) + ', and that the analysis and actions above are my own work.'), W - 8);
+    doc.text(decl, M + 4, y + 6);
+    doc.setTextColor(...MUT); doc.setFontSize(8.5);
+    T('Name: ' + C.trainer, M + 4, y + 27); T('Date: ' + day(generated), M + 70, y + 27); T('Signature:', M + 118, y + 27);
+    if (tSigned) {
+      const d = tc.toDataURL('image/png'), sz = await imgSize(d);
+      if (sz) { const h = 13, w = Math.min(44, h * sz.w / sz.h); doc.addImage(d, 'PNG', M + 134, y + 16, w, h); }
+    } else { doc.setDrawColor(...MUT); doc.line(M + 134, y + 28, M + W - 4, y + 28); }
+    y += 42;
+
+    // Individual responses
+    if ($('optAppx').checked) {
+      doc.addPage(); y = M + 4;
+      heading('Appendix A. Individual responses');
+      const qids = C.questions.map(q => q.id);
+      autoTable(doc, { ...tableBase, startY: y, styles: { ...tableBase.styles, fontSize: 7.2, cellPadding: 1.2 },
+        head: [['Ref', 'Submitted (server)', 'Device ID'].concat(qids.map((q, i) => String(i + 1)), ['Ovr', 'Receipt (SHA-256)'])],
+        body: list.map(r => [who(r), FB.fmtDateTime(r.received), r.p.deviceId].concat(qids.map(q => r.p.answers[q] === 'na' ? 'NA' : r.p.answers[q]),
+          [r.p.answers.overall, r.hash.slice(0, 12).toUpperCase() + (r.verified ? ' OK' : ' CHECK')]).map(pdfText)),
+        columnStyles: { 0: { cellWidth: 22, fontStyle: 'bold' }, 1: { cellWidth: 27 }, 2: { cellWidth: 20 }, 14: { cellWidth: 27 } },
+        didParseCell: d => { if (d.column.index >= 3 && d.column.index <= 13) d.cell.styles.halign = 'center'; }
+      });
+      y = after();
+      doc.setFontSize(8); doc.setTextColor(...MUT);
+      doc.splitTextToSize(pdfText('Device ID is a random code stored in the learner\'s browser when the form first opens; it is not a hardware identifier. Each receipt is the SHA-256 hash of the response exactly as submitted; the learner was shown the first 12 characters as a receipt code. "OK" means the stored response still matches its hash.'), W)
+        .forEach(l => { doc.text(l, M, y); y += 3.6; });
+      y += 6;
+
+      const signedList = list.filter(r => !r.p.anonymous);
+      if (signedList.length) {
+        heading('Appendix B. Learner declarations');
+        doc.setFontSize(8.5); doc.setTextColor(...MUT);
+        T('Named learners agreed their answers can be used to improve the training' + (P.tae ? ' and as TAE40122 evidence.' : '.'), M, y); y += 6;
+        const colW = W / 2;
+        for (let i = 0; i < signedList.length; i++) {
+          const r = signedList[i], col = i % 2, x = M + col * colW;
+          if (col === 0 && y > 255) { doc.addPage(); y = M + 4; }
+          doc.setDrawColor(...LINE); doc.roundedRect(x, y, colW - 4, 30, 1.5, 1.5, 'S');
+          doc.setFont('helvetica', 'bold'); doc.setFontSize(9); doc.setTextColor(...INK); T(who(r), x + 3, y + 5);
+          doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(...MUT); T(FB.fmtDateTime(r.received) + ' - ' + r.p.deviceId, x + 3, y + 9);
+          if (r.signature && showSig) {
+            const sz = await imgSize(r.signature);
+            if (sz) { const h = 17, w = Math.min(colW - 10, h * sz.w / sz.h); doc.addImage(r.signature, r.signature.indexOf('image/jpeg') > 0 ? 'JPEG' : 'PNG', x + 3, y + 11, w, h); }
+          } else { doc.setFontSize(8.5); doc.setTextColor(...INK); T(r.signature ? 'Signature held on file' : 'Not signed (name given)', x + 3, y + 20); }
+          if (col === 1 || i === signedList.length - 1) y += 34;
+        }
+      }
+    }
+
+    // Mapping
+    if ($('optMap').checked && C.questions.some(q => qmap(q, program))) {
+      if (y > 200) { doc.addPage(); y = M + 4; } else y += 4;
+      heading('Appendix C. Question mapping to TAE40122 and the Outcome Standards');
+      autoTable(doc, { ...tableBase, startY: y,
+        head: [['#', 'Statement', 'Evidence mapping']],
+        body: C.questions.map((q, i) => [i + 1, FB.questionText(q, program), qmap(q, program)])
+          .concat([['', C.overall.text, qmap(C.overall, program)], ['', 'Written comments and trainer analysis (sections 2 and 3)', rmap(program)]]).map(r => r.map(pdfText)),
+        columnStyles: { 0: { cellWidth: 8, halign: 'center' }, 2: { cellWidth: 70 } } });
+      y = after() - 3;
+      doc.setFontSize(8); doc.setTextColor(...MUT);
+      T('OS = Outcome Standards for NVR Registered Training Organisations 2025.', M, y);
+    }
+
+    // Footer on every page
+    const pages = doc.getNumberOfPages();
+    for (let i = 1; i <= pages; i++) {
+      doc.setPage(i); doc.setFontSize(7.5); doc.setTextColor(...MUT); doc.setDrawColor(...LINE); doc.line(M, 286, M + W, 286);
+      T('Learner Feedback Report - ' + P.unit + ' - ' + C.trainer + ' - Report ID ' + reportId, M, 290);
+      T('Page ' + i + ' of ' + pages, M + W, 290, { align: 'right' });
+    }
+    doc.setProperties({ title: 'Learner Feedback Report - ' + pname(P), author: C.trainer, subject: C.course, creator: 'Learner Feedback app v' + C.version });
+    doc.save(`Learner Feedback Report - ${pname(P)} - TADO, Caesar.pdf`);
+  }
+
+  if (DEMO) load();
+})();
+</script>
+</body>
+</html>

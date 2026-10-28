@@ -1,0 +1,470 @@
+<!doctype html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#0f5257">
+<title>Learner Feedback</title>
+<style>
+:root {
+  --bg: #f3f5f4; --card: #ffffff; --ink: #17201f; --muted: #5d6967; --line: #dde3e1;
+  --accent: #0f5257; --accent-ink: #ffffff; --accent-soft: #e3efee; --warn: #9a3412; --warn-soft: #fff1e8;
+  --ok: #166534; --radius: 14px; --focus: 0 0 0 3px rgba(15, 82, 87, .35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1514; --card: #172120; --ink: #e8efed; --muted: #9aa8a5; --line: #2a3735;
+    --accent: #5fb3ac; --accent-ink: #0b1514; --accent-soft: #1d3331; --warn: #fdba74; --warn-soft: #3a2415;
+    --ok: #86efac; --focus: 0 0 0 3px rgba(95, 179, 172, .45);
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  padding-bottom: calc(96px + env(safe-area-inset-bottom));
+}
+.wrap { max-width: 640px; margin: 0 auto; padding: 0 16px; }
+header { padding: 22px 0 8px; }
+.eyebrow { font-size: 13px; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin: 0; }
+h1 { font-size: 26px; line-height: 1.2; margin: 4px 0 6px; }
+.lead { color: var(--muted); margin: 0 0 8px; }
+h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 26px 4px 10px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin: 10px 0; }
+.prog { display: flex; gap: 12px; align-items: flex-start; }
+.prog .code { font-weight: 700; color: var(--accent); }
+.prog .meta { color: var(--muted); font-size: 14px; }
+.linkbtn { background: none; border: 0; color: var(--accent); font: inherit; font-size: 14px; padding: 6px 0; cursor: pointer; text-decoration: underline; }
+.choose { display: grid; gap: 10px; }
+.choose button {
+  text-align: left; width: 100%; background: var(--card); color: var(--ink); border: 1px solid var(--line);
+  border-radius: var(--radius); padding: 16px; font: inherit; cursor: pointer;
+}
+.choose button:hover { border-color: var(--accent); }
+.choose strong { display: block; font-size: 17px; }
+
+/* Rating question */
+.q { padding: 14px 16px 12px; }
+.q.missing { border-color: var(--warn); background: var(--warn-soft); }
+.qhead { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; }
+.qtext { margin: 0 0 12px; font-weight: 550; }
+.qnum { color: var(--muted); font-weight: 600; margin-right: 4px; }
+.scale { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; }
+.opt input { position: absolute; opacity: 0; pointer-events: none; }
+.opt span {
+  display: flex; align-items: center; justify-content: center; height: 46px; border-radius: 10px;
+  border: 1px solid var(--line); background: var(--bg); font-weight: 650; cursor: pointer; user-select: none;
+  transition: background .12s, border-color .12s;
+}
+.opt input:checked + span { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.opt input:focus-visible + span { box-shadow: var(--focus); }
+.ends { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 6px; }
+.chosen { font-size: 13px; color: var(--accent); min-height: 19px; margin-top: 2px; font-weight: 600; }
+.na span { height: 30px; padding: 0 12px; font-size: 13px; font-weight: 600; border-radius: 999px; white-space: nowrap; }
+
+/* Stars */
+.stars { display: flex; gap: 6px; }
+.stars .opt span { width: 48px; height: 48px; font-size: 24px; color: var(--muted); }
+.stars .opt input:checked + span { background: var(--accent); color: var(--accent-ink); }
+.stars .opt.lit span { color: var(--accent); border-color: var(--accent); }
+.stars .opt.lit input:checked + span { color: var(--accent-ink); }
+
+textarea, input[type=text] {
+  width: 100%; font: inherit; color: var(--ink); background: var(--bg); border: 1px solid var(--line);
+  border-radius: 10px; padding: 12px; outline: none;
+}
+textarea { min-height: 84px; resize: vertical; }
+textarea:focus, input[type=text]:focus { box-shadow: var(--focus); border-color: var(--accent); }
+label.field { display: block; font-weight: 550; margin: 0 0 8px; }
+.hint { font-size: 13px; color: var(--muted); }
+
+/* Identity toggle */
+.seg { display: grid; grid-template-columns: 1fr 1fr; background: var(--bg); border: 1px solid var(--line); border-radius: 12px; padding: 4px; gap: 4px; }
+.seg .opt span { height: 42px; font-weight: 600; font-size: 15px; border: 0; background: transparent; }
+.seg .opt input:checked + span { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+.idpanel { margin-top: 14px; }
+.pill { display: inline-block; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; background: var(--accent-soft); color: var(--accent); padding: 2px 8px; border-radius: 6px; }
+.sigbox { position: relative; border: 1px dashed var(--muted); border-radius: 10px; background: #fff; height: 150px; touch-action: none; }
+.sigbox canvas { width: 100%; height: 100%; display: block; border-radius: 10px; cursor: crosshair; touch-action: none; }
+.sigbox .ph { position: absolute; inset: auto 12px 10px; color: #8a9593; font-size: 13px; pointer-events: none; border-top: 1px solid #c9d0ce; padding-top: 4px; }
+.row { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+
+.check { display: flex; gap: 10px; align-items: flex-start; cursor: pointer; }
+.check input { width: 22px; height: 22px; margin: 1px 0 0; accent-color: var(--accent); flex: none; }
+details { margin-top: 10px; font-size: 14px; color: var(--muted); }
+details summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+details p { margin: 8px 0; }
+
+/* Sticky submit bar */
+.bar { position: fixed; left: 0; right: 0; bottom: 0; background: color-mix(in srgb, var(--card) 92%, transparent);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); border-top: 1px solid var(--line);
+  padding: 10px 0 calc(10px + env(safe-area-inset-bottom)); z-index: 5; }
+.bar .wrap { display: flex; gap: 12px; align-items: center; }
+.progress { flex: 1; min-width: 0; }
+.progress .track { height: 6px; background: var(--line); border-radius: 99px; overflow: hidden; }
+.progress .fill { height: 100%; width: 0; background: var(--accent); transition: width .2s; }
+.progress small { color: var(--muted); font-size: 12px; }
+.btn { appearance: none; border: 0; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font: inherit; font-weight: 700; padding: 13px 22px; cursor: pointer; min-height: 48px; }
+.btn[disabled] { opacity: .55; cursor: default; }
+.btn.ghost { background: transparent; color: var(--accent); border: 1px solid var(--accent); }
+.err { color: var(--warn); font-size: 14px; margin: 8px 4px 0; }
+.barerr { display: block; color: var(--warn); font-size: 12.5px; line-height: 1.3; margin-top: 3px; }
+.q { padding-bottom: 8px; }
+.notice { background: var(--accent-soft); border-radius: 12px; padding: 12px 14px; font-size: 14px; margin: 10px 0; }
+.notice.warn { background: var(--warn-soft); color: var(--warn); }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; overflow: hidden; }
+
+/* Done screen */
+.done { text-align: center; padding-top: 40px; }
+.tick { width: 72px; height: 72px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; margin: 0 auto 14px; font-size: 38px; }
+.receipt { text-align: left; font-size: 14px; }
+.receipt dt { color: var(--muted); font-size: 12px; text-transform: uppercase; letter-spacing: .04em; margin-top: 10px; }
+.receipt dd { margin: 2px 0 0; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; word-break: break-all; }
+[hidden] { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <p class="eyebrow" id="rtoLine">Learner feedback</p>
+    <div id="intro"><h1>How was your training?</h1>
+    <p class="lead">About 2 minutes. Your honest answers help improve the training.</p></div>
+  </header>
+
+  <div id="demoBanner" class="notice warn" hidden>Demo mode: responses are kept in this browser only. Add the backend URL in config.js before sharing the link.</div>
+  <div id="outboxNote" class="notice" hidden></div>
+
+  <!-- Step 0: pick a program (skipped when the link has ?unit=UEEIC0013 or ?unit=UEEIC0038) -->
+  <section id="chooser" hidden>
+    <h2>Which training did you attend?</h2>
+    <div class="choose" id="chooseList"></div>
+  </section>
+
+  <form id="form" novalidate hidden>
+    <div class="card prog">
+      <div style="flex:1">
+        <div><span class="code" id="pUnit"></span></div>
+        <div id="pTitle"></div>
+        <div class="meta" id="pMeta"></div>
+        <button type="button" class="linkbtn" id="changeProg">Not your training? Change</button>
+      </div>
+    </div>
+    <div id="dupNote" class="notice" hidden></div>
+
+    <div id="questions"></div>
+
+    <h2>Overall</h2>
+    <div class="card q" id="card-overall" data-q="overall">
+      <p class="qtext" id="overallText"></p>
+      <div class="stars" id="stars" role="radiogroup" aria-labelledby="overallText"></div>
+      <div class="chosen" id="chosen-overall"></div>
+    </div>
+
+    <h2>Your comments <span style="text-transform:none;letter-spacing:0;font-weight:400">(optional)</span></h2>
+    <div id="comments"></div>
+
+    <h2>About you</h2>
+    <div class="card">
+      <div class="seg" role="radiogroup" aria-label="Identify yourself">
+        <label class="opt"><input type="radio" name="ident" value="anon" checked><span>Stay anonymous</span></label>
+        <label class="opt"><input type="radio" name="ident" value="named"><span>Add my name</span></label>
+      </div>
+
+      <div class="idpanel" id="anonPanel">
+        <p class="hint" style="margin:0">No name is recorded. For traceability we keep this device's random ID <span class="pill" id="devId"></span> and the date and time you submit.</p>
+      </div>
+
+      <div class="idpanel" id="namedPanel" hidden>
+        <label class="field" for="name">Full name</label>
+        <input type="text" id="name" autocomplete="name" maxlength="80">
+        <label class="field" style="margin-top:14px">Signature <span class="hint">(optional)</span></label>
+        <div class="sigbox" id="sigbox"><canvas id="sig" aria-label="Signature pad"></canvas><div class="ph" id="sigPh">Sign here with your finger or mouse</div></div>
+        <div class="row"><span class="hint">Your device ID <span class="pill" id="devId2"></span> is kept too.</span><button type="button" class="linkbtn" id="sigClear">Clear</button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <label class="check"><input type="checkbox" id="consent"><span>I agree my answers can be used to improve this training<span class="taeOnly"> and as evidence of the trainer's TAE40122 studies</span>.</span></label>
+      <details>
+        <summary>How your information is used</summary>
+        <p>This feedback is collected by <span class="tName"></span>, trainer at <span class="tRto"></span>, to review and improve training.<span class="taeOnly"> A summary may be submitted to <span class="tProv"></span> as evidence for <span class="tCourse"></span>.</span></p>
+        <p>Giving your name and signature is optional. If you stay anonymous, only a random device ID and the submission time are kept, so the response can be checked as genuine without identifying you. Names are replaced with codes (Candidate A, B, C) in any report shared outside the RTO.</p>
+        <p>Responses are stored in a private Google Sheet that only the trainer can open. Questions or requests to see or correct your response: <span class="tMail"></span>.</p>
+      </details>
+    </div>
+
+    <div class="hp" aria-hidden="true"><label>Website <input type="text" id="website" tabindex="-1" autocomplete="off"></label></div>
+    <p class="err" id="formErr" role="alert" hidden></p>
+  </form>
+
+  <!-- Done -->
+  <section id="done" class="done" hidden>
+    <div class="tick" aria-hidden="true">&#10003;</div>
+    <h1 style="font-size:24px">Thank you</h1>
+    <p class="lead" id="doneMsg">Your feedback has been received.</p>
+    <div class="card receipt">
+      <dl style="margin:0">
+        <dt>Receipt code</dt><dd id="rCode"></dd>
+        <dt>Training</dt><dd id="rProg"></dd>
+        <dt>Submitted</dt><dd id="rTime"></dd>
+        <dt>Recorded as</dt><dd id="rWho"></dd>
+      </dl>
+    </div>
+    <p class="hint">Sharing this device? The next person can start a new response.</p>
+    <button class="btn ghost" id="again" type="button">Start a new response</button>
+  </section>
+</div>
+
+<div class="bar" id="bar" hidden>
+  <div class="wrap">
+    <div class="progress" aria-live="polite">
+      <div class="track"><div class="fill" id="fill"></div></div>
+      <small id="progText"></small><small id="barErr" class="barerr" hidden></small>
+    </div>
+    <button class="btn" id="submit" type="button">Submit</button>
+  </div>
+</div>
+
+<script src="config.js"></script>
+<script src="common.js"></script>
+<script>
+(function () {
+  'use strict';
+  const C = window.FEEDBACK_CONFIG, $ = id => document.getElementById(id), esc = FB.esc;
+  const DEMO = !C.endpoint;
+  const DEVICE = FB.deviceId();
+  let program = null, signed = false;
+
+  // ---------- Static text ----------
+  $('rtoLine').textContent = C.rto + ' · Learner feedback';
+  document.querySelectorAll('.tName').forEach(e => e.textContent = C.trainer);
+  document.querySelectorAll('.tRto').forEach(e => e.textContent = C.rto);
+  document.querySelectorAll('.tProv').forEach(e => e.textContent = C.provider);
+  document.querySelectorAll('.tCourse').forEach(e => e.textContent = C.course);
+  document.querySelectorAll('.tMail').forEach(e => e.textContent = C.contact);
+  $('devId').textContent = DEVICE; $('devId2').textContent = DEVICE;
+  $('demoBanner').hidden = !DEMO;
+
+  // ---------- Program selection ----------
+  $('chooseList').innerHTML = Object.entries(C.programs).map(([k, p]) =>
+    `<button type="button" data-p="${k}"><strong>${esc(p.unit)}</strong>${esc(p.title)}<div class="hint">${esc([p.mode, p.delivered].filter(Boolean).join(' · '))}</div></button>`).join('');
+  $('chooseList').addEventListener('click', e => {
+    const b = e.target.closest('button[data-p]'); if (b) start(b.dataset.p);
+  });
+  $('changeProg').addEventListener('click', () => {
+    $('form').hidden = true; $('bar').hidden = true; $('chooser').hidden = false; window.scrollTo(0, 0);
+  });
+
+  function start(p) {
+    program = p;
+    const P = C.programs[p];
+    $('pUnit').textContent = P.unit; $('pTitle').textContent = P.title;
+    $('pMeta').textContent = [P.mode, P.delivered].filter(Boolean).join(' · ');
+    document.querySelectorAll('.taeOnly').forEach(e => { e.hidden = !P.tae; });
+    try { const u = new URL(location.href); u.searchParams.delete('p'); u.searchParams.set('unit', p); history.replaceState(null, '', u); } catch (e) {}
+    buildQuestions();
+    const prev = FB.store.get('eimfb.done', {})[p];
+    $('dupNote').hidden = !prev;
+    if (prev) $('dupNote').textContent = 'Feedback for this training was already sent from this device on ' + FB.fmtDateTime(prev) + '. If you are a different learner, carry on.';
+    $('chooser').hidden = true; $('form').hidden = false; $('bar').hidden = false; $('done').hidden = true; $('intro').hidden = false;
+    showErr('');
+    update();
+  }
+
+  // ---------- Questions ----------
+  function scaleHtml(name) {
+    return `<div class="scale" role="radiogroup">` + [1, 2, 3, 4, 5].map(v =>
+      `<label class="opt"><input type="radio" name="${name}" value="${v}" aria-label="${v} ${esc(C.scale[v - 1])}"><span>${v}</span></label>`).join('') +
+      `</div><div class="ends"><span>${esc(C.scale[0])}</span><span>${esc(C.scale[4])}</span></div>`;
+  }
+  function buildQuestions() {
+    let html = '', section = '';
+    C.questions.forEach((q, i) => {
+      if (q.section !== section) { section = q.section; html += `<h2>${esc(section)}</h2>`; }
+      html += `<div class="card q" id="card-${q.id}" data-q="${q.id}">
+        <div class="qhead"><p class="qtext" id="t-${q.id}"><span class="qnum">${i + 1}.</span>${esc(FB.questionText(q, program))}</p>
+        <label class="opt na"><input type="radio" name="${q.id}" value="na"><span>N/A</span></label></div>
+        ${scaleHtml(q.id)}<div class="chosen" id="chosen-${q.id}"></div></div>`;
+    });
+    $('questions').innerHTML = html;
+    $('overallText').textContent = C.overall.text;
+    $('stars').innerHTML = [1, 2, 3, 4, 5].map(v =>
+      `<label class="opt"><input type="radio" name="overall" value="${v}" aria-label="${v} out of 5"><span>&#9733;</span></label>`).join('');
+    $('comments').innerHTML = C.comments.map(c =>
+      `<div class="card"><label class="field" for="c-${c.id}">${esc(c.text)}</label><textarea id="c-${c.id}" maxlength="1500"></textarea></div>`).join('');
+  }
+  const ratedIds = () => C.questions.map(q => q.id).concat(C.overall.id);
+  function value(name) { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : null; }
+
+  document.addEventListener('change', e => {
+    const n = e.target.name;
+    if (!n) return;
+    if (n === 'ident') { setIdent(); return; }
+    if (ratedIds().includes(n)) {
+      const v = value(n), card = $('card-' + n);
+      if (card) card.classList.remove('missing');
+      if (n === 'overall') {
+        document.querySelectorAll('#stars .opt').forEach((o, i) => o.classList.toggle('lit', i < Number(v)));
+        $('chosen-overall').textContent = v + ' out of 5';
+      } else {
+        $('chosen-' + n).textContent = v === 'na' ? 'Not applicable' : C.scale[Number(v) - 1];
+      }
+      update();
+    }
+  });
+
+  function update() {
+    const ids = ratedIds(), done = ids.filter(id => value(id)).length;
+    $('fill').style.width = (done / ids.length * 100) + '%';
+    $('progText').textContent = done === ids.length ? 'All questions answered' : done + ' of ' + ids.length + ' answered';
+  }
+
+  // ---------- Identity and signature ----------
+  function setIdent() {
+    const named = value('ident') === 'named';
+    $('namedPanel').hidden = !named; $('anonPanel').hidden = named;
+    if (named) { sizeCanvas(); setTimeout(() => $('name').focus(), 50); }
+  }
+  const canvas = $('sig'), ctx = canvas.getContext('2d');
+  let drawing = false, last = null;
+  function sizeCanvas() {
+    const r = canvas.getBoundingClientRect(), dpr = window.devicePixelRatio || 1;
+    if (!r.width) return;
+    const keep = signed ? canvas.toDataURL() : null;
+    canvas.width = Math.round(r.width * dpr); canvas.height = Math.round(r.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.lineWidth = 2.4; ctx.lineCap = 'round'; ctx.lineJoin = 'round'; ctx.strokeStyle = '#111';
+    if (keep) { const img = new Image(); img.onload = () => ctx.drawImage(img, 0, 0, r.width, r.height); img.src = keep; }
+  }
+  function pt(e) { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; }
+  canvas.addEventListener('pointerdown', e => {
+    drawing = true; last = pt(e); canvas.setPointerCapture(e.pointerId);
+    ctx.beginPath(); ctx.arc(last.x, last.y, 1.1, 0, Math.PI * 2); ctx.fillStyle = '#111'; ctx.fill();
+    signed = true; $('sigPh').style.opacity = 0; e.preventDefault();
+  });
+  canvas.addEventListener('pointermove', e => {
+    if (!drawing) return;
+    const p = pt(e); ctx.beginPath(); ctx.moveTo(last.x, last.y); ctx.lineTo(p.x, p.y); ctx.stroke(); last = p; e.preventDefault();
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(t => canvas.addEventListener(t, () => { drawing = false; }));
+  $('sigClear').addEventListener('click', () => { signed = false; ctx.clearRect(0, 0, canvas.width, canvas.height); $('sigPh').style.opacity = 1; });
+  window.addEventListener('resize', () => { if (!$('namedPanel').hidden) sizeCanvas(); });
+
+  // Small white-background PNG so it fits in one Google Sheet cell (limit 50,000 characters).
+  function signatureData() {
+    if (!signed) return '';
+    for (const w of [420, 320, 240]) {
+      const h = Math.round(w * canvas.height / canvas.width);
+      const c = document.createElement('canvas'); c.width = w; c.height = h;
+      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(canvas, 0, 0, w, h);
+      let d = c.toDataURL('image/png');
+      if (d.length > 45000) d = c.toDataURL('image/jpeg', 0.7);
+      if (d.length <= 45000) return d;
+    }
+    return '';
+  }
+
+  // ---------- Submit ----------
+  function showErr(msg) {
+    $('formErr').textContent = msg; $('formErr').hidden = !msg;
+    $('barErr').textContent = msg; $('barErr').hidden = !msg; $('progText').hidden = !!msg;
+  }
+  $('submit').addEventListener('click', async () => {
+    showErr('');
+    const missing = ratedIds().filter(id => !value(id));
+    document.querySelectorAll('.q.missing').forEach(c => c.classList.remove('missing'));
+    if (missing.length) {
+      missing.forEach(id => $('card-' + id).classList.add('missing'));
+      $('card-' + missing[0]).scrollIntoView({ behavior: 'smooth', block: 'center' });
+      showErr('Please answer the highlighted question' + (missing.length > 1 ? 's (' + missing.length + ')' : '') + '. Choose N/A if it does not apply.');
+      return;
+    }
+    const named = value('ident') === 'named', name = $('name').value.trim();
+    if (named && name.length < 2) { $('name').focus(); showErr('Please type your name, or choose Stay anonymous.'); return; }
+    if (!$('consent').checked) { $('consent').focus(); showErr('Please tick the box to agree to how your answers are used.'); return; }
+
+    const btn = $('submit'); btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const P = C.programs[program];
+      const answers = {};
+      ratedIds().forEach(id => { const v = value(id); answers[id] = v === 'na' ? 'na' : Number(v); });
+      const comments = {};
+      C.comments.forEach(c => { comments[c.id] = $('c-' + c.id).value.trim(); });
+      const signature = named ? signatureData() : '';
+      const payload = {
+        v: C.version, id: FB.uuid(), program, unit: P.unit,
+        anonymous: !named, name: named ? name : '', deviceId: DEVICE,
+        clientTime: FB.isoLocal(), tz: (Intl.DateTimeFormat().resolvedOptions().timeZone || ''),
+        ua: navigator.userAgent.slice(0, 200), answers, comments, consent: true,
+        signatureSha256: signature ? await FB.sha256(signature) : ''
+      };
+      const payloadStr = JSON.stringify(payload);
+      const hash = await FB.sha256(payloadStr);
+      const body = { action: 'submit', payload: payloadStr, hash, signature, hp: $('website').value };
+      let msg = 'Your feedback has been received.', received = null;
+
+      if (DEMO) {
+        const list = FB.store.get('eimfb.demo', []);
+        received = FB.isoLocal();
+        list.push({ received, payload: payloadStr, hash, signature, hashCheck: 'OK' });
+        if (!FB.store.set('eimfb.demo', list)) throw new Error('This browser blocked local storage.');
+        msg = 'Saved in demo mode (this browser only).';
+      } else {
+        try {
+          const r = await FB.post(C.endpoint, body); received = r.received;
+        } catch (err) {
+          if (navigator.onLine === false || err instanceof TypeError) {
+            const box = FB.store.get('eimfb.outbox', []); box.push(body); FB.store.set('eimfb.outbox', box);
+            msg = 'No connection right now. Your feedback is saved on this device and will send automatically next time this page opens online.';
+          } else { throw err; }
+        }
+      }
+      const doneMap = FB.store.get('eimfb.done', {}); doneMap[program] = payload.clientTime; FB.store.set('eimfb.done', doneMap);
+      showDone(payload, hash, received, msg);
+    } catch (err) {
+      showErr('Sorry, that did not send: ' + err.message + ' Please try again.');
+    } finally {
+      btn.disabled = false; btn.textContent = 'Submit';
+    }
+  });
+
+  function showDone(p, hash, received, msg) {
+    $('form').hidden = true; $('bar').hidden = true; $('done').hidden = false; $('intro').hidden = true;
+    $('doneMsg').textContent = msg;
+    $('rCode').textContent = hash.slice(0, 12).toUpperCase();
+    $('rProg').textContent = C.programs[p.program].unit + ' ' + C.programs[p.program].title;
+    $('rTime').textContent = FB.fmtDateTime(received || p.clientTime);
+    $('rWho').textContent = p.anonymous ? 'Anonymous · device ' + p.deviceId : p.name + (p.signatureSha256 ? ' (signed)' : '');
+    window.scrollTo(0, 0);
+  }
+  $('again').addEventListener('click', () => {
+    $('form').reset(); signed = false; ctx.clearRect(0, 0, canvas.width, canvas.height); $('sigPh').style.opacity = 1;
+    document.querySelectorAll('.chosen').forEach(e => e.textContent = '');
+    document.querySelectorAll('#stars .opt').forEach(o => o.classList.remove('lit'));
+    setIdent(); start(program); window.scrollTo(0, 0);
+  });
+
+  // ---------- Offline outbox ----------
+  async function flushOutbox() {
+    if (DEMO) return;
+    const box = FB.store.get('eimfb.outbox', []);
+    if (!box.length) return;
+    const left = [];
+    for (const body of box) { try { await FB.post(C.endpoint, body); } catch (e) { left.push(body); } }
+    FB.store.set('eimfb.outbox', left);
+    const sent = box.length - left.length;
+    if (sent) { $('outboxNote').hidden = false; $('outboxNote').textContent = sent + ' saved response' + (sent > 1 ? 's were' : ' was') + ' sent from this device.'; }
+  }
+  window.addEventListener('online', flushOutbox);
+  flushOutbox();
+
+  // ---------- Start ----------
+  const qs = new URLSearchParams(location.search), qp = (qs.get('unit') || qs.get('p') || '').trim().toUpperCase();
+  const p = qp && C.programs[qp] ? qp : null;
+  if (p) start(p); else $('chooser').hidden = false;
+})();
+</script>
+</body>
+</html>
