@@ -33,8 +33,28 @@ h1 { font-size: 26px; line-height: 1.2; margin: 4px 0 6px; }
 .lead { color: var(--muted); margin: 0 0 8px; }
 h2 { font-size: 15px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); margin: 26px 4px 10px; }
 .card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; margin: 10px 0; }
-.prog { display: flex; gap: 12px; align-items: flex-start; }
+.prog { padding: 0; overflow: hidden; }
+.prog .info { padding: 14px 16px 10px; }
 .prog .code { font-weight: 700; color: var(--accent); }
+/* Photo carousel */
+.gallery { position: relative; background: #0b1110; }
+.gallery .track { display: flex; overflow-x: auto; scroll-snap-type: x mandatory; scroll-behavior: smooth; scrollbar-width: none; -webkit-overflow-scrolling: touch; }
+.gallery .track::-webkit-scrollbar { display: none; }
+.gallery figure { flex: 0 0 100%; margin: 0; position: relative; aspect-ratio: 16 / 9; scroll-snap-align: center; scroll-snap-stop: always; }
+.gallery img { width: 100%; height: 100%; object-fit: cover; display: block; user-select: none; -webkit-user-drag: none; }
+.gallery figcaption { position: absolute; left: 0; right: 0; bottom: 0; padding: 26px 14px 30px; color: #fff; font-size: 14px; font-weight: 600;
+  text-shadow: 0 1px 2px rgba(0,0,0,.6); background: linear-gradient(transparent, rgba(0,0,0,.65)); }
+.gallery .count { position: absolute; top: 10px; right: 10px; background: rgba(0,0,0,.55); color: #fff; font-size: 12px; font-weight: 600; padding: 3px 8px; border-radius: 99px; pointer-events: none; }
+.gallery .dots { position: absolute; left: 0; right: 0; bottom: 10px; display: flex; justify-content: center; gap: 6px; pointer-events: none; }
+.gallery .dots i { width: 7px; height: 7px; border-radius: 50%; background: rgba(255,255,255,.5); transition: background .2s, transform .2s; }
+.gallery .dots i.on { background: #fff; transform: scale(1.25); }
+.gallery .nav { position: absolute; top: 50%; transform: translateY(-50%); width: 40px; height: 40px; border: 0; border-radius: 50%; background: rgba(0,0,0,.45); color: #fff;
+  font-size: 22px; line-height: 40px; cursor: pointer; display: none; }
+.gallery .nav.prev { left: 10px; } .gallery .nav.next { right: 10px; }
+.gallery .nav:focus-visible { box-shadow: var(--focus); }
+@media (hover: hover) and (pointer: fine) { .gallery .nav { display: block; } }
+.choose button { display: flex; gap: 12px; align-items: center; }
+.choose .thumb { flex: none; width: 96px; aspect-ratio: 4 / 3; border-radius: 10px; object-fit: cover; background: var(--line); }
 .prog .meta { color: var(--muted); font-size: 14px; }
 .linkbtn { background: none; border: 0; color: var(--accent); font: inherit; font-size: 14px; padding: 6px 0; cursor: pointer; text-decoration: underline; }
 .choose { display: grid; gap: 10px; }
@@ -144,7 +164,14 @@ details p { margin: 8px 0; }
 
   <form id="form" novalidate hidden>
     <div class="card prog">
-      <div style="flex:1">
+      <div class="gallery" id="gallery" hidden aria-roledescription="carousel" aria-label="Photos from the training">
+        <div class="track" id="track"></div>
+        <button type="button" class="nav prev" id="galPrev" aria-label="Previous photo">&#8249;</button>
+        <button type="button" class="nav next" id="galNext" aria-label="Next photo">&#8250;</button>
+        <span class="count" id="galCount" aria-live="polite"></span>
+        <div class="dots" id="galDots"></div>
+      </div>
+      <div class="info">
         <div><span class="code" id="pUnit"></span></div>
         <div id="pTitle"></div>
         <div class="meta" id="pMeta"></div>
@@ -249,7 +276,7 @@ details p { margin: 8px 0; }
 
   // ---------- Program selection ----------
   $('chooseList').innerHTML = Object.entries(C.programs).map(([k, p]) =>
-    `<button type="button" data-p="${k}"><strong>${esc(p.unit)}</strong>${esc(p.title)}<div class="hint">${esc([p.mode, p.delivered].filter(Boolean).join(' · '))}</div></button>`).join('');
+    `<button type="button" data-p="${k}">${p.photos && p.photos.length ? `<img class="thumb" src="${esc(p.photos[0].src)}" alt="" loading="lazy">` : ''}<span><strong>${esc(p.unit)}</strong>${esc(p.title)}<div class="hint">${esc([p.mode, p.delivered].filter(Boolean).join(' · '))}</div></span></button>`).join('');
   $('chooseList').addEventListener('click', e => {
     const b = e.target.closest('button[data-p]'); if (b) start(b.dataset.p);
   });
@@ -257,12 +284,46 @@ details p { margin: 8px 0; }
     $('form').hidden = true; $('bar').hidden = true; $('chooser').hidden = false; window.scrollTo(0, 0);
   });
 
+  // ---------- Photo carousel ----------
+  function buildGallery(photos) {
+    const g = $('gallery'), track = $('track');
+    g.hidden = !photos.length;
+    if (!photos.length) { track.innerHTML = ''; return; }
+    track.innerHTML = photos.map((ph, i) =>
+      `<figure aria-roledescription="slide" aria-label="${i + 1} of ${photos.length}"><img src="${esc(ph.src)}" alt="${esc(ph.caption || '')}" ${i ? 'loading="lazy"' : 'fetchpriority="high"'} draggable="false">` +
+      (ph.caption ? `<figcaption>${esc(ph.caption)}</figcaption>` : '') + `</figure>`).join('');
+    $('galDots').innerHTML = photos.map(() => '<i></i>').join('');
+    const one = photos.length < 2;
+    ['galPrev', 'galNext', 'galDots', 'galCount'].forEach(id => { $(id).style.visibility = one ? 'hidden' : ''; });
+    track.scrollLeft = 0; galMark(0);
+  }
+  function galIndex() { const t = $('track'); return t.clientWidth ? Math.round(t.scrollLeft / t.clientWidth) : 0; }
+  function galMark(i) {
+    const n = $('track').children.length;
+    $('galCount').textContent = (i + 1) + ' / ' + n;
+    [...$('galDots').children].forEach((d, k) => d.classList.toggle('on', k === i));
+  }
+  function galGo(i) {
+    const t = $('track'), n = t.children.length;
+    i = (i + n) % n; t.scrollTo({ left: i * t.clientWidth });
+  }
+  let galTimer;
+  $('track').addEventListener('scroll', () => { clearTimeout(galTimer); galTimer = setTimeout(() => galMark(galIndex()), 60); }, { passive: true });
+  $('galPrev').addEventListener('click', () => galGo(galIndex() - 1));
+  $('galNext').addEventListener('click', () => galGo(galIndex() + 1));
+  $('gallery').addEventListener('keydown', e => {
+    if (e.key === 'ArrowLeft') { galGo(galIndex() - 1); e.preventDefault(); }
+    if (e.key === 'ArrowRight') { galGo(galIndex() + 1); e.preventDefault(); }
+  });
+  $('track').tabIndex = 0;
+
   function start(p) {
     program = p;
     const P = C.programs[p];
     $('pUnit').textContent = P.unit; $('pTitle').textContent = P.title;
     $('pMeta').textContent = [P.mode, P.delivered].filter(Boolean).join(' · ');
     document.querySelectorAll('.taeOnly').forEach(e => { e.hidden = !P.tae; });
+    buildGallery(P.photos || []);
     try { const u = new URL(location.href); u.searchParams.delete('p'); u.searchParams.set('unit', p); history.replaceState(null, '', u); } catch (e) {}
     buildQuestions();
     const prev = FB.store.get('eimfb.done', {})[p];

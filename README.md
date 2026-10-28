@@ -62,7 +62,7 @@ The form alone only evidences *seeking* feedback. The analysis and actions secti
 
 ## Adding another unit
 
-1. In `config.js`, copy a block under `programs`, change the key to the unit code, and set `title`, `mode`, `delivered` and `cohort`. `label`, `tae` and the `map` entries are optional (TAE evidence only).
+1. In `config.js`, copy a block under `programs`, change the key to the unit code, and set `title`, `mode`, `delivered` and `cohort`. Optionally add `photos` (files in `img/`, about 1280 px wide, each with a short caption) for the carousel at the top of the form. `label`, `tae` and the `map` entries are optional (TAE evidence only).
 2. In the Apps Script editor, add the code to `PROGRAMS`, save, then Deploy › Manage deployments › Edit › Version: New version › Deploy. The web app URL stays the same.
 3. Commit `config.js`. The new link is `https://tadosolutions.github.io/UEE-feedback/?unit=<CODE>`.
 

@@ -11,7 +11,7 @@ window.FEEDBACK_CONFIG = {
   rto: 'EIM Training Pty Ltd',
   course: 'TAE40122 Certificate IV in Training and Assessment',
   provider: 'Phoenix Academy',
-  contact: 'caesar.tado@gmail.com',
+  contact: 'caesar.tado@eim.edu.au',
 
   // Each program is keyed by its unit code. The key is used in links (?unit=UEEIC0013),
   // in stored responses and in the Sheet, so add it to PROGRAMS in Code.gs as well.
@@ -26,7 +26,14 @@ window.FEEDBACK_CONFIG = {
       title: 'Develop, enter and verify discrete control programs for programmable controllers',
       mode: 'Face to face',
       delivered: '19 January 2026',
-      cohort: 4
+      cohort: 4,
+      photos: [
+        { src: 'img/UEEIC0013-1.webp', caption: 'Session 1: Introduction to PLCs' },
+        { src: 'img/UEEIC0013-2.webp', caption: 'Session 2: Setting up the PLC trainers' },
+        { src: 'img/UEEIC0013-3.webp', caption: 'Session 2: Your first ladder program' },
+        { src: 'img/UEEIC0013-4.webp', caption: 'Session 3: Timers and counters' },
+        { src: 'img/UEEIC0013-5.webp', caption: 'Session 3: Assessed tasks briefing' }
+      ]
     },
     UEEIC0038: {
       label: 'Learning Program B',
@@ -34,9 +41,19 @@ window.FEEDBACK_CONFIG = {
       title: 'Solve problems in density/level measurement components and systems',
       mode: 'Online (Microsoft Teams)',
       delivered: '10 April 2026',
-      cohort: 3
+      cohort: 3,
+      photos: [
+        { src: 'img/UEEIC0038-1.webp', caption: 'Session 1: Welcome on Teams' },
+        { src: 'img/UEEIC0038-2.webp', caption: 'Session 1: Level measurement technologies' },
+        { src: 'img/UEEIC0038-3.webp', caption: 'Session 2: Transmitter suppression and elevation' },
+        { src: 'img/UEEIC0038-4.webp', caption: 'Session 3: Measuring liquid density' },
+        { src: 'img/UEEIC0038-5.webp', caption: 'Session 3: DP transmitter practical' },
+        { src: 'img/UEEIC0038-6.webp', caption: 'Session 3: Wrap-up' }
+      ]
     }
   },
+  // photos (optional): pictures from the sessions, shown in a carousel at the top of the form.
+  // Put the files in img/ (WebP or JPEG, about 1280 px wide) and list them here with a short caption.
 
   scale: ['Strongly disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly agree'],
 
