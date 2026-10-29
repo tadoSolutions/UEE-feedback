@@ -67,29 +67,25 @@ function submit(body) {
   const sigOk = !signature || sha256(signature) === p.signatureSha256;
   const hashCheck = serverHash === body.hash && sigOk ? 'OK' : 'MISMATCH';
 
-  const lock = LockService.getScriptLock();
-  lock.waitLock(10000);
-  try {
-    const sh = SpreadsheetApp.getActive().getSheetByName(SHEET);
-    if (!sh) throw new Error('Run setup() first.');
-    // Duplicate protection: offline retries resend the same response ID.
-    const found = sh.getRange('B:B').createTextFinder(p.id).matchEntireCell(true).findNext();
-    if (found) {
-      const prev = sh.getRange(found.getRow(), 1).getValue();
-      return json({ ok: true, id: p.id, duplicate: true, received: new Date(prev).toISOString(), hash: serverHash });
-    }
-    const received = new Date();
-    const a = p.answers || {}, c = p.comments || {};
-    const row = [received, p.id, p.program, p.unit, p.anonymous ? 'Yes' : 'No', clean(p.name, 80), clean(p.deviceId, 20),
-      clean(p.clientTime, 40), clean(p.tz, 60)]
-      .concat(QIDS.map(function (q) { return a[q] === undefined ? '' : a[q]; }))
-      .concat([clean(c.good, 1500), clean(c.change, 1500), clean(p.ua, 200), serverHash, hashCheck, signature,
-        body.payload, 'Active']);
-    sh.appendRow(row);
-    return json({ ok: true, id: p.id, received: received.toISOString(), hash: serverHash, hashCheck: hashCheck });
-  } finally {
-    lock.releaseLock();
+  // No script lock: appendRow is atomic on its own, and a lock let one stalled request
+  // block every other learner (29 Oct 2026). The report also ignores repeated response IDs.
+  const sh = SpreadsheetApp.getActive().getSheetByName(SHEET);
+  if (!sh) throw new Error('Run setup() first.');
+  // Duplicate protection: offline retries resend the same response ID.
+  const found = sh.getRange('B:B').createTextFinder(p.id).matchEntireCell(true).findNext();
+  if (found) {
+    const prev = sh.getRange(found.getRow(), 1).getValue();
+    return json({ ok: true, id: p.id, duplicate: true, received: new Date(prev).toISOString(), hash: serverHash });
   }
+  const received = new Date();
+  const a = p.answers || {}, c = p.comments || {};
+  const row = [received, p.id, p.program, p.unit, p.anonymous ? 'Yes' : 'No', clean(p.name, 80), clean(p.deviceId, 20),
+    clean(p.clientTime, 40), clean(p.tz, 60)]
+    .concat(QIDS.map(function (q) { return a[q] === undefined ? '' : a[q]; }))
+    .concat([clean(c.good, 1500), clean(c.change, 1500), clean(p.ua, 200), serverHash, hashCheck, signature,
+      body.payload, 'Active']);
+  sh.appendRow(row);
+  return json({ ok: true, id: p.id, received: received.toISOString(), hash: serverHash, hashCheck: hashCheck });
 }
 
 function list(body) {

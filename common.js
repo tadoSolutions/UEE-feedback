@@ -97,16 +97,34 @@
 
   // ---- Talking to the Apps Script backend ----
   // text/plain keeps the request "simple", so the browser sends no CORS preflight.
-  async function post(endpoint, body) {
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify(body),
-      redirect: 'follow'
-    });
-    if (!res.ok) throw new Error('Server returned ' + res.status);
-    const data = await res.json();
-    if (!data.ok) throw new Error(data.error || 'Request was not accepted');
+  // Errors caused by the connection or the server (not by the response itself) are marked
+  // retryable, so the form can keep the response on the device and send it again later.
+  function retryable(msg) { const e = new Error(msg); e.retryable = true; return e; }
+  async function post(endpoint, body, timeoutMs) {
+    const ctl = window.AbortController ? new AbortController() : null;
+    const timer = ctl ? setTimeout(() => ctl.abort(), timeoutMs || 30000) : null;
+    let res, data;
+    try {
+      res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+        body: JSON.stringify(body),
+        redirect: 'follow',
+        signal: ctl ? ctl.signal : undefined
+      });
+      if (!res.ok) throw retryable('Server returned ' + res.status);
+      try { data = await res.json(); } catch (e) { throw retryable('The server sent an unexpected reply.'); }
+    } catch (e) {
+      if (e.retryable) throw e;
+      throw retryable(e.name === 'AbortError' ? 'The server took too long to reply.' : 'Could not reach the server.');
+    } finally {
+      if (timer) clearTimeout(timer);
+    }
+    if (!data.ok) {
+      const msg = data.error || 'Request was not accepted';
+      if (/^Server error|busy|lock|timed? ?out/i.test(msg)) throw retryable(msg);
+      throw new Error(msg);
+    }
     return data;
   }
 

@@ -181,6 +181,8 @@ input:focus, textarea:focus { outline: none; box-shadow: var(--focus); border-co
           include: (r.status || 'Active').toLowerCase() !== 'excluded' });
       }
       all.sort((a, b) => new Date(a.received) - new Date(b.received));
+      // A retried submission can occasionally arrive twice; keep the first copy of each response ID.
+      const seen = new Set(); all = all.filter(r => !seen.has(r.p.id) && seen.add(r.p.id));
       msg.textContent = all.length + ' response' + (all.length === 1 ? '' : 's') + ' loaded.';
       $('main').hidden = false; loadDrafts(); render();
     } catch (err) { msg.textContent = 'Could not load: ' + err.message; }

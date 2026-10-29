@@ -474,12 +474,22 @@ details p { margin: 8px 0; }
         msg = 'Saved in demo mode (this browser only).';
       } else {
         try {
-          const r = await FB.post(C.endpoint, body); received = r.received;
+          received = (await FB.post(C.endpoint, body)).received;
         } catch (err) {
-          if (navigator.onLine === false || err instanceof TypeError) {
-            const box = FB.store.get('eimfb.outbox', []); box.push(body); FB.store.set('eimfb.outbox', box);
-            msg = 'No connection right now. Your feedback is saved on this device and will send automatically next time this page opens online.';
-          } else { throw err; }
+          if (!err.retryable) throw err;
+          // One quick retry for a brief hiccup, then keep it on the device and keep trying.
+          try {
+            btn.textContent = 'Retrying…';
+            await new Promise(r => setTimeout(r, 3000));
+            received = (await FB.post(C.endpoint, body)).received;
+          } catch (err2) {
+            if (!err2.retryable) throw err2;
+            const box = FB.store.get('eimfb.outbox', []); box.push(body);
+            if (!FB.store.set('eimfb.outbox', box)) throw err2;
+            msg = 'Your feedback is saved on this device. The server is not responding right now, so it will send automatically, '
+              + 'while this page is open or next time you open it. You do not need to fill it in again.';
+            scheduleFlush();
+          }
         }
       }
       const doneMap = FB.store.get('eimfb.done', {}); doneMap[program] = payload.clientTime; FB.store.set('eimfb.done', doneMap);
@@ -508,17 +518,24 @@ details p { margin: 8px 0; }
   });
 
   // ---------- Offline outbox ----------
+  let flushing = false, flushTimer = null;
   async function flushOutbox() {
-    if (DEMO) return;
+    if (DEMO || flushing) return;
     const box = FB.store.get('eimfb.outbox', []);
     if (!box.length) return;
+    flushing = true;
     const left = [];
-    for (const body of box) { try { await FB.post(C.endpoint, body); } catch (e) { left.push(body); } }
+    // Responses the server rejects outright (not retryable) are dropped; the rest wait for the next try.
+    for (const body of box) { try { await FB.post(C.endpoint, body); } catch (e) { if (e.retryable) left.push(body); } }
     FB.store.set('eimfb.outbox', left);
+    flushing = false;
     const sent = box.length - left.length;
-    if (sent) { $('outboxNote').hidden = false; $('outboxNote').textContent = sent + ' saved response' + (sent > 1 ? 's were' : ' was') + ' sent from this device.'; }
+    if (sent) { $('outboxNote').hidden = false; $('outboxNote').textContent = sent + ' saved response' + (sent > 1 ? 's were' : ' was') + ' sent from this device. Thank you.'; }
+    if (left.length) scheduleFlush();
   }
+  function scheduleFlush() { clearTimeout(flushTimer); flushTimer = setTimeout(flushOutbox, 30000); }
   window.addEventListener('online', flushOutbox);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') flushOutbox(); });
   flushOutbox();
 
   // ---------- Start ----------
